@@ -6,11 +6,16 @@ import json
 import shutil
 import subprocess
 import os
+import argparse
+
+parser = argparse.ArgumentParser(description='Create them from json file')
+parser.add_argument('path', metavar='json_file', type=str, help='path to \
+the json file containing the theme.')
+args = parser.parse_args()
 
 # Import json theme. 
-# TO DO: Replace json file with arg input later
 output_location = os.environ['HOME'] + "/.config/terminology/themes"
-json_file = "terminal-sexy.json"
+json_file = args.path
 theme = json.loads(open(json_file).read())
 
 if theme["name"] == "":
