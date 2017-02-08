@@ -15,7 +15,7 @@ args = parser.parse_args()
 
 # Import json theme. 
 output_location = os.environ['HOME'] + "/.config/terminology/themes"
-json_file = args.path
+json_file = os.path.basename(args.path)
 theme = json.loads(open(json_file).read())
 
 if theme["name"] == "":
