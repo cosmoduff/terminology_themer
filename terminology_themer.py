@@ -6,6 +6,7 @@ import json
 import shutil
 import subprocess
 import os
+import sys
 import argparse
 
 parser = argparse.ArgumentParser(description='Create them from json file')
@@ -22,6 +23,10 @@ if theme["name"] == "":
     theme_name = json_file.rstrip('.json')
 else:
     theme_name = theme["name"]
+
+if os.path.isfile(output_location + "/" + theme_name + ".edj"):
+        print("The theme " + theme_name + " already exists.")
+        sys.exit(0)
 
 tmp_location = "/tmp/" + theme_name
 
