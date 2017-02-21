@@ -16,15 +16,17 @@ args = parser.parse_args()
 
 # Import json theme. 
 output_location = os.environ['HOME'] + "/.config/terminology/themes"
+json_file_path = args.path
 json_file = os.path.basename(args.path)
-theme = json.loads(open(json_file).read())
+theme = json.loads(open(json_file_path).read())
 
 if theme["name"] == "":
     theme_name = json_file.rstrip('.json')
 else:
     theme_name = theme["name"]
 
-if os.path.isfile(output_location + "/" + theme_name + ".edj"):
+output_file = output_location + "/" + theme_name + ".edj"
+if os.path.isfile(output_file):
         print("The theme " + theme_name + " already exists.")
         sys.exit(0)
 
@@ -34,13 +36,19 @@ shutil.copytree("build_template", tmp_location)
 
 colors = theme["color"]
 background = theme["background"]
+foreground = theme["foreground"]
+
+# Change color15 to match foreground for random gen themes
+if foreground != colors[15]:
+    colors[15] = foreground
 
 color_template = Template(open("template_files/theme.edc.j2").read())
 output_theme = color_template.render(zero=colors[0],one=colors[1],two=colors[2],\
         three=colors[3],four=colors[4],five=colors[5],six=colors[6],\
         seven=colors[7],eight=colors[8],nine=colors[9],ten=colors[10],\
         eleven=colors[11],twelve=colors[12],thirteen=colors[13],\
-        fourteen=colors[14],fifteen=colors[15],background=background,theme_name=theme_name)
+        fourteen=colors[14],fifteen=colors[15],background=background,\
+        foreground=foreground,theme_name=theme_name)
 build_template = Template(open("template_files/build.sh.j2").read())
 output_build = build_template.render(theme_name=theme_name)
 
