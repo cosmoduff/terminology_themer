@@ -9,63 +9,101 @@ import os
 import sys
 import argparse
 
-parser = argparse.ArgumentParser(description='Create them from json file')
-parser.add_argument('path', metavar='json_file', type=str, help='path to \
-the json file containing the theme.')
-args = parser.parse_args()
+def get_args():
+    parser = argparse.ArgumentParser(
+        description='Create them from json file')
 
-# Import json theme. 
-output_location = os.environ['HOME'] + "/.config/terminology/themes"
-json_file_path = args.path
-json_file = os.path.basename(args.path)
-theme = json.loads(open(json_file_path).read())
+    parser.add_argument('path',
+                        metavar='json_file',
+                        type=str,
+                        help='path to the json file containing the theme.')
+    
+    args = parser.parse_args()
 
-if theme["name"] == "":
-    theme_name = json_file.rstrip('.json')
-else:
-    theme_name = theme["name"]
+    return args
 
-output_file = output_location + "/" + theme_name + ".edj"
-if os.path.isfile(output_file):
-        print("The theme " + theme_name + " already exists.")
-        sys.exit(0)
+def cleanup(remove_dir):
+    shutil.rmtree(remove_dir)
 
-tmp_location = "/tmp/" + theme_name
+def configure_tmp(name):
+    # Takes a directory name creates the directory under /tmp and returns its
+    # path.
+    # Feel like this should just create the dir and take the full path as the
+    # arg.
 
-shutil.copytree("build_template", tmp_location)
+    tmp_location = "/tmp/" + theme_name
+    
+    shutil.copytree("build_template", tmp_location)
 
-colors = theme["color"]
-background = theme["background"]
-foreground = theme["foreground"]
+    return tmp_location
 
-# Change color15 to match foreground for random gen themes
-if foreground != colors[15]:
-    colors[15] = foreground
+def set_theme_name(json_file):
+    # Set the theme name as filename if the name var is empty
+    if theme["name"] == "":
+        theme_name = json_file.rstrip('.json')
+    else:
+        theme_name = theme["name"]
 
-color_template = Template(open("template_files/theme.edc.j2").read())
-output_theme = color_template.render(zero=colors[0],one=colors[1],two=colors[2],\
-        three=colors[3],four=colors[4],five=colors[5],six=colors[6],\
-        seven=colors[7],eight=colors[8],nine=colors[9],ten=colors[10],\
-        eleven=colors[11],twelve=colors[12],thirteen=colors[13],\
-        fourteen=colors[14],fifteen=colors[15],background=background,\
-        foreground=foreground,theme_name=theme_name)
-build_template = Template(open("template_files/build.sh.j2").read())
-output_build = build_template.render(theme_name=theme_name)
+    return theme_name
 
-build_file = open(tmp_location+"/build.sh", "w")
-color_file = open(tmp_location+"/"+theme_name+".edc", "w")
 
-build_file.write(output_build)
-build_file.close()
+def main():
 
-os.chmod(tmp_location+"/build.sh", 0o700)
+    args = get_args()
 
-color_file.write(output_theme)
-color_file.close()
+    # Import json theme. 
+    output_location = os.environ['HOME'] + "/.config/terminology/themes"
+    file_path = args.path
+    json_file = os.path.basename(args.path)
+    theme = json.loads(open(file_path).read())
+    theme_name = set_theme_name(theme)
 
-os.chdir(tmp_location)
-subprocess.call([tmp_location+"/build.sh"])
+    # Set the output location and exit if it exists
+    # Would like to add a force option later
+    output_file = output_location + "/" + theme_name + ".edj"
+    if os.path.isfile(output_file):
+            print("The theme " + theme_name + " already exists.")
+            sys.exit(0)
+    
+    tmp_location = configure_tmp(theme_name)
+    
+    # Set color vars
+    colors = theme["color"]
+    background = theme["background"]
+    foreground = theme["foreground"]
+    
+    # Change color15 to match foreground for random gen themes
+    if foreground != colors[15]:
+        colors[15] = foreground
+    
+    color_template = Template(open("template_files/theme.edc.j2").read())
+    output_theme = color_template.render(zero=colors[0],one=colors[1],two=colors[2],\
+            three=colors[3],four=colors[4],five=colors[5],six=colors[6],\
+            seven=colors[7],eight=colors[8],nine=colors[9],ten=colors[10],\
+            eleven=colors[11],twelve=colors[12],thirteen=colors[13],\
+            fourteen=colors[14],fifteen=colors[15],background=background,\
+            foreground=foreground,theme_name=theme_name)
+    build_template = Template(open("template_files/build.sh.j2").read())
+    output_build = build_template.render(theme_name=theme_name)
+    
+    build_file = open(tmp_location+"/build.sh", "w")
+    color_file = open(tmp_location+"/"+theme_name+".edc", "w")
+    
+    build_file.write(output_build)
+    build_file.close()
+    
+    os.chmod(tmp_location+"/build.sh", 0o700)
+    
+    color_file.write(output_theme)
+    color_file.close()
+    
+    os.chdir(tmp_location)
+    subprocess.call([tmp_location+"/build.sh"])
+    
+    shutil.move(tmp_location+"/"+theme_name+".edj", output_location)
+    
+    cleanup(tmp_location)
 
-shutil.move(tmp_location+"/"+theme_name+".edj", output_location)
-
-shutil.rmtree(tmp_location)
+# Execute
+if __name__=="__main__":
+    main()
